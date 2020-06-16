@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +11,8 @@ import (
 
 const UiRef = "├───"
 const UiEndRef = "└───"
-const UiVerticalLine = "│\t"
+const UiVerticalLine = "│  "
+const UiIndent = "  "
 
 type NodeDependencies struct {
 	name      string
@@ -22,19 +24,26 @@ type NodeDependencies struct {
 
 type TreeBuilder struct {
 	isPrintFile bool
+	depthLevel  int
 }
 
 func (tb *TreeBuilder) BuildTree(path string) (*NodeDependencies, error) {
 	rootFile := &NodeDependencies{fullPath: path, isDir: true}
-	if errorHappen := tb.buildTreeRecursive(rootFile); errorHappen != nil {
+	if errorHappen := tb.buildTreeRecursive(rootFile, 0); errorHappen != nil {
 		return nil, errorHappen
 	}
 	return rootFile, nil
 }
 
-func (tb *TreeBuilder) buildTreeRecursive(parent *NodeDependencies) error {
+func (tb *TreeBuilder) buildTreeRecursive(parent *NodeDependencies, depthLevel int) error {
+	if tb.depthLevel > 0 && depthLevel >= tb.depthLevel {
+		return nil
+	}
 	files, err := ioutil.ReadDir(parent.fullPath)
 	if err != nil {
+		parent.name += "(?error)"
+		//noinspection GoUnhandledErrorResult
+		fmt.Fprintln(os.Stderr, err)
 		return err
 	}
 
@@ -59,8 +68,8 @@ func (tb *TreeBuilder) buildTreeRecursive(parent *NodeDependencies) error {
 		if !node.isDir {
 			continue
 		}
-		if err := tb.buildTreeRecursive(node); err != nil {
-			return err
+		if err := tb.buildTreeRecursive(node, depthLevel+1); err != nil {
+			//return err
 		}
 	}
 	return nil
@@ -80,18 +89,18 @@ func (tb *TreeBuilder) PrintTree(out io.Writer, nodes *[]NodeDependencies, prefi
 		nodeSize := tb.getFileSizeSuffix(node)
 		//is last
 		if idx == size-1 {
-			line := fmt.Sprintf("%s%s%s%s\n", prefix, UiEndRef, node.name, nodeSize)
+			line := fmt.Sprintf("%s%s %s%s\n", prefix, UiEndRef, node.name, nodeSize)
 			_, errWrite := fmt.Fprint(out, line)
 			if errWrite != nil {
 				return errWrite
 			}
 
-			errPrint := tb.PrintTree(out, node.dependent, prefix+"\t")
+			errPrint := tb.PrintTree(out, node.dependent, prefix+UiIndent)
 			if errPrint != nil {
 				return errPrint
 			}
 		} else {
-			line := fmt.Sprintf("%s%s%s%s\n", prefix, UiRef, node.name, nodeSize)
+			line := fmt.Sprintf("%s%s %s%s\n", prefix, UiRef, node.name, nodeSize)
 			_, errWrite := fmt.Fprint(out, line)
 			if errWrite != nil {
 				return errWrite
@@ -116,8 +125,8 @@ func (tb *TreeBuilder) getFileSizeSuffix(node NodeDependencies) string {
 	return nodeSize
 }
 
-func dirTree(out io.Writer, path string, printFiles bool) error {
-	treeBuilder := &TreeBuilder{printFiles}
+func dirTree(out io.Writer, path string, printFiles bool, depth int) error {
+	treeBuilder := &TreeBuilder{printFiles, depth}
 	rootNode, err := treeBuilder.BuildTree(path)
 	if err != nil {
 		return err
@@ -127,12 +136,11 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 
 func main() {
 	out := os.Stdout
-	if !(len(os.Args) == 2 || len(os.Args) == 3) {
-		panic("usage go run main.go . [-f]")
-	}
-	path := os.Args[1]
-	printFiles := len(os.Args) == 3 && os.Args[2] == "-f"
-	err := dirTree(out, path, printFiles)
+	pathPtr := flag.String("p", ".", "root path")
+	depthPtr := flag.Int("d", -1, "max depth")
+	printFiles := flag.Bool("f", true, "print file")
+	flag.Parse()
+	err := dirTree(out, *pathPtr, *printFiles, *depthPtr)
 	if err != nil {
 		panic(err.Error())
 	}
