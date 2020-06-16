@@ -2,4 +2,4 @@
 FROM golang:1.9.2
 COPY . .
 RUN go test -v
-CMD        [go main.go]
+CMD [ "go", "run", "main.go" ]
