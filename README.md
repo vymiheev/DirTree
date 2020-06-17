@@ -4,7 +4,7 @@ This is simple GoLang implementation of unix command: `tree` just for joy.
 It started as first week homework on coursera https://www.coursera.org/learn/golang-webservices-1/home/welcome, 
 and I go ahead changing output format and adding extra CLI flag.   
  
-##GO USE
+## GO USE
 Files and directories sorted lexicographically. 
 To run (use -f flag to see files in output):
 `go run main.go -p=<path>`
@@ -18,7 +18,7 @@ To install in local GoLang repository, type:
 `go install vymiheev/trygo/dirtree`
 
 
-##DOCKER USE
+## DOCKER USE
 Create new docker image:
 `docker build -t vymiheev/dir_tree:0.1 .`
 
