@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"io"
 	"testing"
 )
 
@@ -37,12 +38,13 @@ const testFullResult = `├─── project
 `
 
 func TestTreeFull(t *testing.T) {
-	out := new(bytes.Buffer)
-	err := dirTree(out, "testdata", true, -1)
+	outBytes := new(bytes.Buffer)
+	outWriter := io.Writer(outBytes)
+	err := dirTree(&outWriter, "testdata", true, -1)
 	if err != nil {
 		t.Errorf("test for OK Failed - error")
 	}
-	result := out.String()
+	result := outBytes.String()
 	if result != testFullResult {
 		t.Errorf("test for OK Failed - results not match\nGot:\n%v\nExpected:\n%v", result, testFullResult)
 	}
@@ -63,12 +65,13 @@ const testDirResult = `├─── project
 `
 
 func TestTreeDir(t *testing.T) {
-	out := new(bytes.Buffer)
-	err := dirTree(out, "testdata", false, -1)
+	outBytes := new(bytes.Buffer)
+	outWriter := io.Writer(outBytes)
+	err := dirTree(&outWriter, "testdata", false, -1)
 	if err != nil {
 		t.Errorf("test for OK Failed - error")
 	}
-	result := out.String()
+	result := outBytes.String()
 	if result != testDirResult {
 		t.Errorf("test for OK Failed - results not match\nGot:\n%v\nExpected:\n%v", result, testDirResult)
 	}
