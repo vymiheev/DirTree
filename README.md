@@ -41,3 +41,5 @@ Of course, you can type 'docker run' and full invocation will be like:
 `docker run --rm -v /:/mnt_dir_tree:ro vymiheev/dir_tree:0.1 -p=/mnt_dir_tree/Users`
 
 but as you see line is bigger and not so pretty as bash script.
+
+Test file provided by Vasily Romanov
